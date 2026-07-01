@@ -3,8 +3,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/calc.dart';
+import '../../core/dynamic_fields.dart';
 import '../../core/enums.dart';
 import '../../data/repositories.dart';
+import '../../models/app_settings.dart';
 import '../../models/invoice.dart';
 import '../../models/product.dart';
 import '../../widgets/ui.dart';
@@ -147,6 +149,26 @@ class _InvoiceEditorScreenState extends ConsumerState<InvoiceEditorScreen> {
                   _save();
                 },
               ),
+              const SizedBox(height: 12),
+              InkWell(
+                onTap: () => _pickDateTime(invoice, settings),
+                borderRadius: BorderRadius.circular(12),
+                child: InputDecorator(
+                  decoration: const InputDecoration(
+                      labelText: 'Invoice date & time'),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        '${dateFormatById(settings.dateFormatId).format(invoice.issuedAt)}'
+                        '  ·  '
+                        '${timeFormatById(settings.timeFormatId).format(invoice.issuedAt)}',
+                      ),
+                      const Icon(Icons.event_outlined, size: 20),
+                    ],
+                  ),
+                ),
+              ),
             ],
           ),
           SectionCard(
@@ -201,6 +223,26 @@ class _InvoiceEditorScreenState extends ConsumerState<InvoiceEditorScreen> {
         ],
       ),
     );
+  }
+
+  Future<void> _pickDateTime(Invoice invoice, AppSettings settings) async {
+    final current = invoice.issuedAt;
+    final date = await showDatePicker(
+      context: context,
+      initialDate: current,
+      firstDate: DateTime(2000),
+      lastDate: DateTime(2100),
+    );
+    if (date == null || !mounted) return;
+    final time = await showTimePicker(
+      context: context,
+      initialTime: TimeOfDay.fromDateTime(current),
+    );
+    if (!mounted) return;
+    final t = time ?? TimeOfDay.fromDateTime(current);
+    invoice.issuedAt =
+        DateTime(date.year, date.month, date.day, t.hour, t.minute);
+    _save();
   }
 
   Future<void> _addItem() async {

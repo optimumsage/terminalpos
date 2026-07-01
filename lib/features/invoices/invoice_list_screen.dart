@@ -120,7 +120,7 @@ class _InvoiceListScreenState extends ConsumerState<InvoiceListScreen> {
                             children: [
                               Text(
                                 '${invoice.number.isEmpty ? '—' : invoice.number} · '
-                                '${dateFormatById(settings.dateFormatId).format(invoice.createdAt)}',
+                                '${dateFormatById(settings.dateFormatId).format(invoice.issuedAt)}',
                                 style: Theme.of(context).textTheme.bodySmall,
                               ),
                               const SizedBox(height: 4),

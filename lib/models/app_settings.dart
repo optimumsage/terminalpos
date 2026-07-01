@@ -14,6 +14,7 @@ class AppSettings {
     this.businessWebsite = '',
     this.businessTaxId = '',
     this.logoPath = '',
+    this.showBusinessName = true,
     // Printer connection
     this.printerInterface = PrinterInterface.bluetooth,
     this.printerLanguage = PrinterLanguage.escpos,
@@ -63,6 +64,7 @@ class AppSettings {
   String businessWebsite;
   String businessTaxId;
   String logoPath;
+  bool showBusinessName;
 
   PrinterInterface printerInterface;
   PrinterLanguage printerLanguage;
@@ -127,6 +129,7 @@ class AppSettings {
         'businessWebsite': businessWebsite,
         'businessTaxId': businessTaxId,
         'logoPath': logoPath,
+        'showBusinessName': showBusinessName,
         'printerInterface': printerInterface.name,
         'printerLanguage': printerLanguage.name,
         'lastDeviceId': lastDeviceId,
@@ -184,6 +187,7 @@ class AppSettings {
       businessWebsite: pick('businessWebsite', ''),
       businessTaxId: pick('businessTaxId', ''),
       logoPath: pick('logoPath', ''),
+      showBusinessName: pick('showBusinessName', true),
       printerInterface: pickEnum(
           'printerInterface', PrinterInterface.values, PrinterInterface.bluetooth),
       printerLanguage: pickEnum(

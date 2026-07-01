@@ -94,6 +94,7 @@ class Invoice {
     required this.templateId,
     required this.createdAt,
     required this.updatedAt,
+    DateTime? issuedAt,
     this.status = InvoiceStatus.draft,
     this.billToName = '',
     this.billToPhone = '',
@@ -104,7 +105,8 @@ class Invoice {
     this.taxEnabled = false,
     this.taxRate = 0,
     List<InvoiceItem>? items,
-  }) : items = items ?? [];
+  })  : items = items ?? [],
+        issuedAt = issuedAt ?? createdAt;
 
   final String id;
   String name;
@@ -112,6 +114,10 @@ class Invoice {
   String templateId;
   final DateTime createdAt;
   DateTime updatedAt;
+
+  /// The date/time printed on the invoice. Defaults to [createdAt] but the user
+  /// can override it in the editor.
+  DateTime issuedAt;
   InvoiceStatus status;
   String billToName;
   String billToPhone;
@@ -130,6 +136,7 @@ class Invoice {
         'templateId': templateId,
         'createdAt': createdAt.toIso8601String(),
         'updatedAt': updatedAt.toIso8601String(),
+        'issuedAt': issuedAt.toIso8601String(),
         'status': status.name,
         'billToName': billToName,
         'billToPhone': billToPhone,
@@ -149,6 +156,9 @@ class Invoice {
         templateId: json['templateId'] as String,
         createdAt: DateTime.parse(json['createdAt'] as String),
         updatedAt: DateTime.parse(json['updatedAt'] as String),
+        issuedAt: json['issuedAt'] != null
+            ? DateTime.parse(json['issuedAt'] as String)
+            : null,
         status: InvoiceStatus.values.byName(
           json['status'] as String? ?? 'draft',
         ),

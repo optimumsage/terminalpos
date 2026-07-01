@@ -23,6 +23,7 @@ class _FormatSettingsScreenState extends ConsumerState<FormatSettingsScreen> {
   late final TextEditingController _prefix;
   late final TextEditingController _nextNumber;
   late final TextEditingController _padding;
+  final FocusNode _nextNumberFocus = FocusNode();
   bool _initialized = false;
 
   @override
@@ -44,6 +45,7 @@ class _FormatSettingsScreenState extends ConsumerState<FormatSettingsScreen> {
     _prefix.dispose();
     _nextNumber.dispose();
     _padding.dispose();
+    _nextNumberFocus.dispose();
     super.dispose();
   }
 
@@ -56,6 +58,13 @@ class _FormatSettingsScreenState extends ConsumerState<FormatSettingsScreen> {
     }
     final s = ref.watch(settingsValueProvider);
     final theme = Theme.of(context);
+
+    // Keep the "Next number" field showing the current next id whenever the
+    // user isn't actively editing it (it advances each time an invoice is made).
+    if (!_nextNumberFocus.hasFocus &&
+        _nextNumber.text != s.invoiceNextNumber.toString()) {
+      _nextNumber.text = s.invoiceNextNumber.toString();
+    }
 
     return Scaffold(
       appBar: AppBar(title: const Text('Currency & Format')),
@@ -239,9 +248,11 @@ class _FormatSettingsScreenState extends ConsumerState<FormatSettingsScreen> {
                   Expanded(
                     child: TextField(
                       controller: _nextNumber,
+                      focusNode: _nextNumberFocus,
                       keyboardType: TextInputType.number,
-                      decoration:
-                          const InputDecoration(labelText: 'Next number'),
+                      decoration: const InputDecoration(
+                          labelText: 'Next number',
+                          helperText: 'Used for the next invoice'),
                       onChanged: (v) {
                         final parsed = int.tryParse(v);
                         if (parsed != null) {

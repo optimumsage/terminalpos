@@ -29,6 +29,7 @@ class _BusinessSettingsScreenState
   late final TextEditingController _taxId;
 
   String _logoPath = '';
+  bool _showName = true;
   bool _initialized = false;
 
   @override
@@ -42,6 +43,7 @@ class _BusinessSettingsScreenState
     _website = TextEditingController(text: s.businessWebsite);
     _taxId = TextEditingController(text: s.businessTaxId);
     _logoPath = s.logoPath;
+    _showName = s.showBusinessName;
     _initialized = true;
   }
 
@@ -81,7 +83,8 @@ class _BusinessSettingsScreenState
       ..businessEmail = _email.text.trim()
       ..businessWebsite = _website.text.trim()
       ..businessTaxId = _taxId.text.trim()
-      ..logoPath = _logoPath);
+      ..logoPath = _logoPath
+      ..showBusinessName = _showName);
     if (!mounted) return;
     showSnack(context, 'Business details saved');
     Navigator.of(context).pop();
@@ -129,6 +132,14 @@ class _BusinessSettingsScreenState
                 controller: _name,
                 textCapitalization: TextCapitalization.words,
                 decoration: const InputDecoration(labelText: 'Business name'),
+              ),
+              SwitchListTile(
+                contentPadding: EdgeInsets.zero,
+                title: const Text('Show business name on receipt'),
+                subtitle: const Text(
+                    'Turn off to show only the logo at the top'),
+                value: _showName,
+                onChanged: (v) => setState(() => _showName = v),
               ),
               const SizedBox(height: 12),
               TextField(

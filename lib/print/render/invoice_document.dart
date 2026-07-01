@@ -119,17 +119,18 @@ class InvoiceDocument extends StatelessWidget {
     );
   }
 
-  Widget _business(double base) {
+  Widget? _business(double base) {
     final lines = <Widget>[
-      Text(
-        settings.businessName,
-        textAlign: _textAlign,
-        style: TextStyle(
-          fontSize: base * 1.4,
-          fontWeight: FontWeight.w900,
-          color: Colors.black,
+      if (settings.showBusinessName)
+        Text(
+          settings.businessName,
+          textAlign: _textAlign,
+          style: TextStyle(
+            fontSize: base * 1.4,
+            fontWeight: FontWeight.w900,
+            color: Colors.black,
+          ),
         ),
-      ),
     ];
     for (final line in [
       settings.businessAddress,
@@ -141,6 +142,7 @@ class InvoiceDocument extends StatelessWidget {
       if (line.trim().isEmpty) continue;
       lines.add(Text(line, textAlign: _textAlign));
     }
+    if (lines.isEmpty) return null;
     return Column(
       crossAxisAlignment:
           _centered ? CrossAxisAlignment.center : CrossAxisAlignment.start,
@@ -149,7 +151,7 @@ class InvoiceDocument extends StatelessWidget {
   }
 
   Widget _meta(double base) {
-    final now = invoice.createdAt;
+    final now = invoice.issuedAt;
     final date = dateFormatById(settings.dateFormatId).format(now);
     final time = timeFormatById(settings.timeFormatId).format(now);
     return Column(
