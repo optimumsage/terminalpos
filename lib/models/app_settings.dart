@@ -11,6 +11,7 @@ class AppSettings {
     this.businessAddress = '',
     this.businessPhone = '',
     this.businessEmail = '',
+    this.businessWebsite = '',
     this.businessTaxId = '',
     this.logoPath = '',
     // Printer connection
@@ -59,6 +60,7 @@ class AppSettings {
   String businessAddress;
   String businessPhone;
   String businessEmail;
+  String businessWebsite;
   String businessTaxId;
   String logoPath;
 
@@ -122,6 +124,7 @@ class AppSettings {
         'businessAddress': businessAddress,
         'businessPhone': businessPhone,
         'businessEmail': businessEmail,
+        'businessWebsite': businessWebsite,
         'businessTaxId': businessTaxId,
         'logoPath': logoPath,
         'printerInterface': printerInterface.name,
@@ -178,6 +181,7 @@ class AppSettings {
       businessAddress: pick('businessAddress', ''),
       businessPhone: pick('businessPhone', ''),
       businessEmail: pick('businessEmail', ''),
+      businessWebsite: pick('businessWebsite', ''),
       businessTaxId: pick('businessTaxId', ''),
       logoPath: pick('logoPath', ''),
       printerInterface: pickEnum(

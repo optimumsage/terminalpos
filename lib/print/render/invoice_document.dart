@@ -135,6 +135,7 @@ class InvoiceDocument extends StatelessWidget {
       settings.businessAddress,
       settings.businessPhone,
       settings.businessEmail,
+      settings.businessWebsite,
       if (settings.businessTaxId.isNotEmpty) 'Tax ID: ${settings.businessTaxId}',
     ]) {
       if (line.trim().isEmpty) continue;

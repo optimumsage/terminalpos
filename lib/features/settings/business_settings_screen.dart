@@ -25,6 +25,7 @@ class _BusinessSettingsScreenState
   late final TextEditingController _address;
   late final TextEditingController _phone;
   late final TextEditingController _email;
+  late final TextEditingController _website;
   late final TextEditingController _taxId;
 
   String _logoPath = '';
@@ -38,6 +39,7 @@ class _BusinessSettingsScreenState
     _address = TextEditingController(text: s.businessAddress);
     _phone = TextEditingController(text: s.businessPhone);
     _email = TextEditingController(text: s.businessEmail);
+    _website = TextEditingController(text: s.businessWebsite);
     _taxId = TextEditingController(text: s.businessTaxId);
     _logoPath = s.logoPath;
     _initialized = true;
@@ -49,6 +51,7 @@ class _BusinessSettingsScreenState
     _address.dispose();
     _phone.dispose();
     _email.dispose();
+    _website.dispose();
     _taxId.dispose();
     super.dispose();
   }
@@ -76,6 +79,7 @@ class _BusinessSettingsScreenState
       ..businessAddress = _address.text.trim()
       ..businessPhone = _phone.text.trim()
       ..businessEmail = _email.text.trim()
+      ..businessWebsite = _website.text.trim()
       ..businessTaxId = _taxId.text.trim()
       ..logoPath = _logoPath);
     if (!mounted) return;
@@ -145,6 +149,13 @@ class _BusinessSettingsScreenState
                 controller: _email,
                 keyboardType: TextInputType.emailAddress,
                 decoration: const InputDecoration(labelText: 'Email'),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: _website,
+                keyboardType: TextInputType.url,
+                decoration: const InputDecoration(
+                    labelText: 'Website', hintText: 'www.example.com'),
               ),
               const SizedBox(height: 12),
               TextField(
