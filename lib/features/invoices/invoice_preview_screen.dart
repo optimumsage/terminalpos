@@ -161,14 +161,14 @@ class _InvoicePreviewScreenState extends ConsumerState<InvoicePreviewScreen> {
     setState(() => _printing = true);
     try {
       // Let the current frame (and logo image) settle before capturing.
+      // Let the logo image decode and the current frame finish painting before
+      // capturing. Note: do NOT use RenderObject.debugNeedsPaint here — it is a
+      // debug-only getter whose value is computed inside an assert, so in
+      // release builds it throws "LateInitializationError: Local 'result'".
       await Future<void>.delayed(const Duration(milliseconds: 150));
+      await WidgetsBinding.instance.endOfFrame;
       final boundary = _boundaryKey.currentContext!.findRenderObject()
           as RenderRepaintBoundary;
-      var tries = 0;
-      while (boundary.debugNeedsPaint && tries < 10) {
-        await Future<void>.delayed(const Duration(milliseconds: 40));
-        tries++;
-      }
       final mono = await captureBoundary(boundary);
       await ref.read(printerControllerProvider.notifier).printBitmap(mono);
 
