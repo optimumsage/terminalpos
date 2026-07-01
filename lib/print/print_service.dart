@@ -58,11 +58,58 @@ class PrinterController extends Notifier<PrinterState> {
   PrinterTransport? _transport;
   PrinterInterface? _transportInterface;
 
+  bool _restoreStarted = false;
+
   @override
-  PrinterState build() => const PrinterState();
+  PrinterState build() {
+    // Kick off a one-time attempt to restore the last-used printer as soon as
+    // the controller is first used (e.g. opening the printer settings or
+    // preview screen). Fire-and-forget so build stays synchronous.
+    if (!_restoreStarted) {
+      _restoreStarted = true;
+      Future(_restoreConnection);
+    }
+    return const PrinterState();
+  }
 
   AppSettings get _settings =>
       ref.read(settingsProvider).value ?? AppSettings();
+
+  /// Restores the last-used printer after an app restart: shows it in the UI
+  /// and reconnects silently when auto-connect is on and permissions already
+  /// allow it (never prompts here — that only happens on explicit actions).
+  Future<void> _restoreConnection() async {
+    final s = await ref.read(settingsProvider.future);
+    if (!s.autoConnect || s.lastDeviceId.isEmpty) return;
+    if (state.isConnected) return;
+
+    final device = PrinterDevice(
+      id: s.lastDeviceId,
+      name: s.lastDeviceName.isEmpty ? s.lastDeviceId : s.lastDeviceName,
+      interface: s.printerInterface,
+    );
+    // Remember the device in the UI even if we can't reconnect right now.
+    state = state.copyWith(device: device);
+
+    final transport = _transportFor(s);
+    if (!await transport.isReadyToConnect()) return;
+    if (await transport.isConnected()) {
+      state =
+          state.copyWith(status: PrinterConnState.connected, device: device);
+      return;
+    }
+    state = state.copyWith(status: PrinterConnState.connecting, device: device);
+    try {
+      await transport.connect(device);
+      state =
+          state.copyWith(status: PrinterConnState.connected, device: device);
+    } on Object {
+      // Keep the remembered device visible but stay disconnected — no error
+      // noise for a background restore; the user can tap to reconnect/print.
+      state = state.copyWith(
+          status: PrinterConnState.disconnected, device: device);
+    }
+  }
 
   PrinterTransport _transportFor(AppSettings s) {
     if (_transport != null && _transportInterface == s.printerInterface) {

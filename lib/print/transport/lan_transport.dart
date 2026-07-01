@@ -37,6 +37,9 @@ class LanTransport implements PrinterTransport {
   }
 
   @override
+  Future<bool> isReadyToConnect() async => true;
+
+  @override
   Future<bool> isConnected() async => _socket != null;
 
   @override

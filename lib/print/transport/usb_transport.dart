@@ -21,6 +21,9 @@ class UsbTransport implements PrinterTransport {
   }
 
   @override
+  Future<bool> isReadyToConnect() async => false;
+
+  @override
   Future<bool> isConnected() async => false;
 
   @override

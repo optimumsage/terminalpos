@@ -87,6 +87,13 @@ class BluetoothTransport implements PrinterTransport {
   }
 
   @override
+  Future<bool> isReadyToConnect() async {
+    // Only true if the runtime permission is already granted, so startup
+    // auto-reconnect never triggers a permission dialog.
+    return Permission.bluetoothConnect.isGranted;
+  }
+
+  @override
   Future<bool> isConnected() => PrintBluetoothThermal.connectionStatus
       .timeout(_quick, onTimeout: () => false);
 

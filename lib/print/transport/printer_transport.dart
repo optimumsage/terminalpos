@@ -33,6 +33,11 @@ abstract class PrinterTransport {
 
   Future<void> connect(PrinterDevice device);
 
+  /// Whether a connection can be attempted without prompting the user (e.g.
+  /// runtime permissions are already granted). Used to decide whether to
+  /// silently auto-reconnect to the last printer on startup.
+  Future<bool> isReadyToConnect() async => true;
+
   Future<bool> isConnected();
 
   Future<void> send(List<int> bytes);
