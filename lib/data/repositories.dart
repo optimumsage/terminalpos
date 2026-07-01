@@ -182,6 +182,16 @@ class TemplateRepository {
 
   Future<void> delete(String id) => _db.deleteTemplate(id);
 
+  /// One-shot read of all templates (does not rely on the watch stream having
+  /// emitted yet).
+  Future<List<InvoiceTemplate>> all() async {
+    final rows = await _db.allTemplates();
+    return rows
+        .map((r) =>
+            InvoiceTemplate.fromJson(jsonDecode(r.data) as Map<String, dynamic>))
+        .toList();
+  }
+
   Future<InvoiceTemplate?> firstOrNull() async {
     final rows = await _db.allTemplates();
     if (rows.isEmpty) return null;

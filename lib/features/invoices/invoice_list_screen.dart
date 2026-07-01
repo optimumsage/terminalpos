@@ -137,14 +137,12 @@ class _InvoiceListScreenState extends ConsumerState<InvoiceListScreen> {
                             ],
                           ),
                         ),
-                        trailing: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          crossAxisAlignment: CrossAxisAlignment.end,
+                        trailing: Row(
+                          mainAxisSize: MainAxisSize.min,
                           children: [
                             Text(money.format(totals.grandTotal),
                                 style: const TextStyle(
                                     fontWeight: FontWeight.w700)),
-                            const SizedBox(height: 4),
                             _RowMenu(
                               onClone: () => _clone(invoice),
                               onPreview: () =>
@@ -167,7 +165,10 @@ class _InvoiceListScreenState extends ConsumerState<InvoiceListScreen> {
   }
 
   Future<void> _createInvoice() async {
-    final templates = ref.read(templatesStreamProvider).value ?? [];
+    // Read templates directly from the store — deterministic, unlike the watch
+    // stream which may not have emitted on first use.
+    final templates = await ref.read(templateRepositoryProvider).all();
+    if (!mounted) return;
     final chosen = await _pickTemplate(templates);
     if (chosen == null) return;
 

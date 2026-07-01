@@ -14,6 +14,9 @@
     <!-- USB thermal printers (host mode) -->
     <uses-feature android:name="android.hardware.usb.host" android:required="false"/>
 
+    <!-- In-app self-update: install the downloaded APK via the system installer -->
+    <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES"/>
+
     <application
         android:label="TerminalPOS"
         android:name="${applicationName}"

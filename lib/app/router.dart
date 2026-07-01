@@ -9,6 +9,7 @@ import '../features/settings/printer_settings_screen.dart';
 import '../features/settings/business_settings_screen.dart';
 import '../features/settings/format_settings_screen.dart';
 import '../features/settings/backup_screen.dart';
+import '../features/settings/about_screen.dart';
 import '../features/templates/templates_screen.dart';
 import '../features/templates/template_editor_screen.dart';
 
@@ -63,6 +64,10 @@ final appRouter = GoRouter(
         GoRoute(
           path: 'backup',
           builder: (context, state) => const BackupScreen(),
+        ),
+        GoRoute(
+          path: 'about',
+          builder: (context, state) => const AboutScreen(),
         ),
       ],
     ),

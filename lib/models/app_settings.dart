@@ -162,11 +162,13 @@ class AppSettings {
   factory AppSettings.fromJson(Map<String, dynamic> j) {
     T pick<T>(String key, T fallback) =>
         j.containsKey(key) && j[key] != null ? j[key] as T : fallback;
-    E pickEnum<E>(String key, List<E> values, E fallback) {
+    // E must be bound to Enum so `.name` resolves via the static extension
+    // getter — calling `.name` through `dynamic` throws NoSuchMethodError.
+    E pickEnum<E extends Enum>(String key, List<E> values, E fallback) {
       final raw = j[key] as String?;
       if (raw == null) return fallback;
       for (final v in values) {
-        if ((v as dynamic).name == raw) return v;
+        if (v.name == raw) return v;
       }
       return fallback;
     }

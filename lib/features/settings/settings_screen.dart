@@ -59,6 +59,12 @@ class SettingsScreen extends ConsumerWidget {
                 subtitle: 'Export/restore data and CSV',
                 onTap: () => context.push('/settings/backup'),
               ),
+              _NavTile(
+                icon: Icons.system_update,
+                title: 'About & Updates',
+                subtitle: 'Version info and check for updates',
+                onTap: () => context.push('/settings/about'),
+              ),
             ],
           ),
           _AppearanceCard(settings: settings, brandColors: _brandColors),
