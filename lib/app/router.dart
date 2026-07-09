@@ -3,6 +3,9 @@ import 'package:go_router/go_router.dart';
 import '../features/invoices/invoice_editor_screen.dart';
 import '../features/invoices/invoice_list_screen.dart';
 import '../features/invoices/invoice_preview_screen.dart';
+import '../features/notes/notes_list_screen.dart';
+import '../features/notes/note_editor_screen.dart';
+import '../features/notes/note_preview_screen.dart';
 import '../features/products/products_screen.dart';
 import '../features/settings/settings_screen.dart';
 import '../features/settings/printer_settings_screen.dart';
@@ -31,6 +34,20 @@ final appRouter = GoRouter(
       path: '/invoice/:id/preview',
       builder: (context, state) =>
           InvoicePreviewScreen(invoiceId: state.pathParameters['id']!),
+    ),
+    GoRoute(
+      path: '/notes',
+      builder: (context, state) => const NotesListScreen(),
+    ),
+    GoRoute(
+      path: '/notes/:id',
+      builder: (context, state) =>
+          NoteEditorScreen(noteId: state.pathParameters['id']!),
+    ),
+    GoRoute(
+      path: '/notes/:id/preview',
+      builder: (context, state) =>
+          NotePreviewScreen(noteId: state.pathParameters['id']!),
     ),
     GoRoute(
       path: '/products',

@@ -34,6 +34,11 @@ class _InvoiceListScreenState extends ConsumerState<InvoiceListScreen> {
         title: const Text('Invoices'),
         actions: [
           IconButton(
+            tooltip: 'Custom print',
+            icon: const Icon(Icons.note_alt_outlined),
+            onPressed: () => context.push('/notes'),
+          ),
+          IconButton(
             tooltip: 'Products',
             icon: const Icon(Icons.inventory_2_outlined),
             onPressed: () => context.push('/products'),

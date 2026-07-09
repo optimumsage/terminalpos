@@ -59,3 +59,20 @@ enum TemplateSection {
 }
 
 enum TemplateAlignment { left, center }
+
+/// Horizontal alignment for a custom-print note block.
+enum NoteAlign { left, center, right }
+
+/// Font family choice for a custom-print note block. Maps to a Flutter logical
+/// font family that resolves on-device without bundling any font assets.
+enum NoteFont {
+  monospace('Mono', 'monospace'),
+  sans('Sans', null),
+  serif('Serif', 'serif');
+
+  const NoteFont(this.label, this.family);
+  final String label;
+
+  /// The `TextStyle.fontFamily` value; null means the platform default (sans).
+  final String? family;
+}

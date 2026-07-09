@@ -27,6 +27,7 @@ class _InvoiceEditorScreenState extends ConsumerState<InvoiceEditorScreen> {
   Invoice? _invoice;
   bool _loading = true;
   late final TextEditingController _nameCtrl;
+  late final TextEditingController _numberCtrl;
   late final TextEditingController _notesCtrl;
   late final TextEditingController _billNameCtrl;
   late final TextEditingController _billPhoneCtrl;
@@ -36,6 +37,7 @@ class _InvoiceEditorScreenState extends ConsumerState<InvoiceEditorScreen> {
   void initState() {
     super.initState();
     _nameCtrl = TextEditingController();
+    _numberCtrl = TextEditingController();
     _notesCtrl = TextEditingController();
     _billNameCtrl = TextEditingController();
     _billPhoneCtrl = TextEditingController();
@@ -47,6 +49,7 @@ class _InvoiceEditorScreenState extends ConsumerState<InvoiceEditorScreen> {
     final invoice = await ref.read(invoiceRepositoryProvider).get(widget.invoiceId);
     if (invoice != null) {
       _nameCtrl.text = invoice.name;
+      _numberCtrl.text = invoice.number;
       _notesCtrl.text = invoice.notes;
       _billNameCtrl.text = invoice.billToName;
       _billPhoneCtrl.text = invoice.billToPhone;
@@ -61,6 +64,7 @@ class _InvoiceEditorScreenState extends ConsumerState<InvoiceEditorScreen> {
   @override
   void dispose() {
     _nameCtrl.dispose();
+    _numberCtrl.dispose();
     _notesCtrl.dispose();
     _billNameCtrl.dispose();
     _billPhoneCtrl.dispose();
@@ -73,6 +77,7 @@ class _InvoiceEditorScreenState extends ConsumerState<InvoiceEditorScreen> {
     if (invoice == null) return;
     invoice
       ..name = _nameCtrl.text.trim().isEmpty ? invoice.name : _nameCtrl.text
+      ..number = _numberCtrl.text.trim()
       ..notes = _notesCtrl.text
       ..billToName = _billNameCtrl.text
       ..billToPhone = _billPhoneCtrl.text
@@ -128,6 +133,15 @@ class _InvoiceEditorScreenState extends ConsumerState<InvoiceEditorScreen> {
             title: 'Details',
             icon: Icons.description_outlined,
             children: [
+              TextField(
+                controller: _numberCtrl,
+                decoration: const InputDecoration(
+                  labelText: 'Invoice number',
+                  helperText: 'Auto-generated — edit if needed',
+                ),
+                onChanged: (_) => _save(),
+              ),
+              const SizedBox(height: 12),
               TextField(
                 controller: _nameCtrl,
                 decoration: const InputDecoration(labelText: 'Invoice name'),

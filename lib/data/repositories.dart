@@ -5,6 +5,7 @@ import 'package:uuid/uuid.dart';
 
 import '../core/enums.dart';
 import '../models/app_settings.dart';
+import '../models/custom_note.dart';
 import '../models/invoice.dart';
 import '../models/product.dart';
 import '../models/template.dart';
@@ -59,10 +60,14 @@ class SettingsController extends AsyncNotifier<AppSettings> {
   }
 
   /// Returns the current auto-increment number and advances the counter.
+  ///
+  /// Uses [edit] (not the built-in `update`) so the advanced counter is written
+  /// to the KV store — otherwise it only lives in memory and repeats after a
+  /// restart.
   Future<int> consumeInvoiceNumber() async {
     final current = state.value ?? AppSettings();
     final n = current.invoiceNextNumber;
-    await update((s) => s..invoiceNextNumber = n + 1);
+    await edit((s) => s..invoiceNextNumber = n + 1);
     return n;
   }
 }
@@ -133,6 +138,76 @@ class InvoiceRepository {
     );
   }
 }
+
+// --------------------------------------------------------------------------
+// Custom-print notes
+// --------------------------------------------------------------------------
+const _notesKey = 'custom_notes';
+
+/// Owns the reusable custom-print notes library. Stored as a single JSON array
+/// in the KV store (like [AppSettings]) so no database table/migration is
+/// needed. Mutations re-encode the whole list and refresh state.
+class NotesController extends AsyncNotifier<List<CustomNote>> {
+  AppDatabase get _db => ref.read(appDatabaseProvider);
+
+  @override
+  Future<List<CustomNote>> build() async {
+    final raw = await _db.getKv(_notesKey);
+    if (raw == null || raw.isEmpty) return [];
+    final list = jsonDecode(raw) as List<dynamic>;
+    return list
+        .map((e) => CustomNote.fromJson(e as Map<String, dynamic>))
+        .toList();
+  }
+
+  Future<void> _persist(List<CustomNote> notes) async {
+    await _db.setKv(_notesKey, jsonEncode(notes.map((n) => n.toJson()).toList()));
+    state = AsyncData(notes);
+  }
+
+  /// Inserts or updates [note] by id (most-recently-updated first) and persists.
+  Future<void> save(CustomNote note) async {
+    note.updatedAt = DateTime.now();
+    final notes = [...(state.value ?? const <CustomNote>[])];
+    final i = notes.indexWhere((n) => n.id == note.id);
+    if (i >= 0) {
+      notes[i] = note;
+    } else {
+      notes.add(note);
+    }
+    notes.sort((a, b) => b.updatedAt.compareTo(a.updatedAt));
+    await _persist(notes);
+  }
+
+  Future<void> delete(String id) async {
+    final notes = [...(state.value ?? const <CustomNote>[])]
+      ..removeWhere((n) => n.id == id);
+    await _persist(notes);
+  }
+
+  CustomNote? get(String id) {
+    for (final n in state.value ?? const <CustomNote>[]) {
+      if (n.id == id) return n;
+    }
+    return null;
+  }
+
+  /// Builds an unsaved note seeded with one empty block.
+  CustomNote createBlank() {
+    final now = DateTime.now();
+    return CustomNote(
+      id: newId(),
+      name: 'Note',
+      createdAt: now,
+      updatedAt: now,
+      blocks: [NoteBlock(id: newId())],
+    );
+  }
+}
+
+final notesProvider =
+    AsyncNotifierProvider<NotesController, List<CustomNote>>(
+        NotesController.new);
 
 // --------------------------------------------------------------------------
 // Products
