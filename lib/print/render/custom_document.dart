@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 
 import '../../core/enums.dart';
@@ -26,8 +28,8 @@ class CustomDocument extends StatelessWidget {
     final metrics = PaperMetrics.forWidth(settings.paperWidthMm);
     final blocks = <Widget>[];
     for (final block in note.blocks) {
-      if (block.text.trim().isEmpty) continue;
-      blocks.add(_block(block));
+      final widget = _block(block, metrics);
+      if (widget != null) blocks.add(widget);
     }
 
     return Container(
@@ -42,7 +44,9 @@ class CustomDocument extends StatelessWidget {
     );
   }
 
-  Widget _block(NoteBlock block) {
+  Widget? _block(NoteBlock block, PaperMetrics metrics) {
+    if (block.isImage) return _imageBlock(block, metrics);
+    if (block.text.trim().isEmpty) return null;
     return Text(
       block.text,
       textAlign: _textAlign(block.align),
@@ -55,6 +59,35 @@ class CustomDocument extends StatelessWidget {
         height: 1.25,
       ),
     );
+  }
+
+  Widget? _imageBlock(NoteBlock block, PaperMetrics metrics) {
+    final file = File(block.imagePath);
+    if (!file.existsSync()) return null;
+    return Align(
+      alignment: _alignment(block.align),
+      child: ConstrainedBox(
+        constraints: BoxConstraints(
+          maxWidth: metrics.dots * block.imageWidthScale,
+        ),
+        child: Image.file(
+          file,
+          fit: BoxFit.contain,
+          filterQuality: FilterQuality.medium,
+        ),
+      ),
+    );
+  }
+
+  Alignment _alignment(NoteAlign align) {
+    switch (align) {
+      case NoteAlign.left:
+        return Alignment.centerLeft;
+      case NoteAlign.center:
+        return Alignment.center;
+      case NoteAlign.right:
+        return Alignment.centerRight;
+    }
   }
 
   TextAlign _textAlign(NoteAlign align) {

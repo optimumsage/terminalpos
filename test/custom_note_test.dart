@@ -50,6 +50,39 @@ void main() {
     expect(b2.align, NoteAlign.right);
   });
 
+  test('image blocks round-trip and report isImage', () {
+    final note = CustomNote(
+      id: 'n',
+      name: 'Signage',
+      createdAt: DateTime(2026),
+      updatedAt: DateTime(2026),
+      blocks: [
+        NoteBlock(
+          id: 'img',
+          imagePath: '/data/app/note_123.png',
+          imageWidthScale: 0.6,
+          align: NoteAlign.center,
+        ),
+      ],
+    );
+
+    final restored = CustomNote.fromJson(note.toJson());
+    final b = restored.blocks.single;
+    expect(b.isImage, isTrue);
+    expect(b.imagePath, '/data/app/note_123.png');
+    expect(b.imageWidthScale, 0.6);
+    expect(b.align, NoteAlign.center);
+    // A note with an image block (even with no text) is not "empty".
+    expect(restored.isEmpty, isFalse);
+  });
+
+  test('old JSON without image fields defaults to a text block', () {
+    final b = NoteBlock.fromJson({'id': 'b', 'text': 'hi'});
+    expect(b.isImage, isFalse);
+    expect(b.imagePath, '');
+    expect(b.imageWidthScale, 1.0);
+  });
+
   test('fromJson tolerates missing optional fields', () {
     final restored = CustomNote.fromJson({
       'id': 'n',

@@ -78,12 +78,12 @@ class NotesListScreen extends ConsumerWidget {
   }
 
   String _preview(CustomNote note) {
-    final text = note.blocks
-        .map((b) => b.text.trim())
+    final parts = note.blocks
+        .map((b) => b.isImage ? '[image]' : b.text.trim())
         .where((t) => t.isNotEmpty)
         .join(' · ')
         .replaceAll('\n', ' ');
-    return text.isEmpty ? '(empty)' : text;
+    return parts.isEmpty ? '(empty)' : parts;
   }
 
   Future<void> _create(BuildContext context, WidgetRef ref) async {

@@ -1,8 +1,9 @@
 import '../core/enums.dart';
 
-/// A single styled block of text within a [CustomNote]. Each block owns its own
-/// size, font, weight, slant and alignment so a note can mix, e.g., a big bold
-/// title with smaller body lines. Line breaks inside [text] are preserved.
+/// A single block within a [CustomNote]. A block is either a styled text block
+/// or an image block (when [imagePath] is set). Text blocks own their own size,
+/// font, weight, slant and alignment; image blocks own a width scale and
+/// alignment. Line breaks inside [text] are preserved.
 class NoteBlock {
   NoteBlock({
     required this.id,
@@ -12,6 +13,8 @@ class NoteBlock {
     this.bold = false,
     this.italic = false,
     this.align = NoteAlign.left,
+    this.imagePath = '',
+    this.imageWidthScale = 1.0,
   });
 
   final String id;
@@ -25,6 +28,17 @@ class NoteBlock {
   bool italic;
   NoteAlign align;
 
+  /// Absolute path to a copied image file. When non-empty this is an image
+  /// block and the text styling fields are ignored.
+  String imagePath;
+
+  /// Image width as a fraction of the printable paper width — see
+  /// [imageWidthPresets]. Default 1.0 = full width.
+  double imageWidthScale;
+
+  /// Whether this block renders an image rather than text.
+  bool get isImage => imagePath.isNotEmpty;
+
   NoteBlock copy() => NoteBlock(
         id: id,
         text: text,
@@ -33,6 +47,8 @@ class NoteBlock {
         bold: bold,
         italic: italic,
         align: align,
+        imagePath: imagePath,
+        imageWidthScale: imageWidthScale,
       );
 
   Map<String, dynamic> toJson() => {
@@ -43,6 +59,8 @@ class NoteBlock {
         'bold': bold,
         'italic': italic,
         'align': align.name,
+        'imagePath': imagePath,
+        'imageWidthScale': imageWidthScale,
       };
 
   factory NoteBlock.fromJson(Map<String, dynamic> json) => NoteBlock(
@@ -53,6 +71,8 @@ class NoteBlock {
         bold: json['bold'] as bool? ?? false,
         italic: json['italic'] as bool? ?? false,
         align: NoteAlign.values.byName(json['align'] as String? ?? 'left'),
+        imagePath: json['imagePath'] as String? ?? '',
+        imageWidthScale: (json['imageWidthScale'] as num?)?.toDouble() ?? 1.0,
       );
 }
 
@@ -62,6 +82,14 @@ const Map<String, double> sizePresets = {
   'M': 1.0,
   'L': 1.3,
   'XL': 1.7,
+};
+
+/// Selectable image-width presets (fraction of printable width), keyed by label.
+const Map<String, double> imageWidthPresets = {
+  'S': 0.4,
+  'M': 0.6,
+  'L': 0.8,
+  'Full': 1.0,
 };
 
 /// A saved, reusable custom-print note: an ordered list of styled [blocks].
@@ -82,8 +110,10 @@ class CustomNote {
   DateTime updatedAt;
   List<NoteBlock> blocks;
 
-  /// Whether every block is empty (used to disable printing a blank note).
-  bool get isEmpty => blocks.every((b) => b.text.trim().isEmpty);
+  /// Whether the note has nothing printable — every block is an empty text
+  /// block with no image (used to disable printing a blank note).
+  bool get isEmpty =>
+      blocks.every((b) => !b.isImage && b.text.trim().isEmpty);
 
   Map<String, dynamic> toJson() => {
         'id': id,

@@ -1,6 +1,11 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:path/path.dart' as p;
+import 'package:path_provider/path_provider.dart';
 
 import '../../core/enums.dart';
 import '../../data/repositories.dart';
@@ -72,6 +77,80 @@ class _NoteEditorScreenState extends ConsumerState<NoteEditorScreen> {
     _save();
   }
 
+  Future<void> _showAddSheet() async {
+    final choice = await showModalBottomSheet<String>(
+      context: context,
+      showDragHandle: true,
+      builder: (context) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Padding(
+              padding: EdgeInsets.all(16),
+              child: Text('Add block',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
+            ),
+            ListTile(
+              leading: const Icon(Icons.text_fields),
+              title: const Text('Text block'),
+              subtitle: const Text('Styled text — size, font, bold, align'),
+              onTap: () => Navigator.pop(context, 'text'),
+            ),
+            ListTile(
+              leading: const Icon(Icons.image_outlined),
+              title: const Text('Image block'),
+              subtitle: const Text('Pick an image to print'),
+              onTap: () => Navigator.pop(context, 'image'),
+            ),
+            const SizedBox(height: 8),
+          ],
+        ),
+      ),
+    );
+    if (choice == 'text') {
+      _addBlock();
+    } else if (choice == 'image') {
+      await _addImageBlock();
+    }
+  }
+
+  Future<void> _addImageBlock() async {
+    final path = await _pickImage();
+    if (path == null) return;
+    final note = _note;
+    if (note == null) return;
+    final block = NoteBlock(id: newId(), imagePath: path);
+    _blockCtrls[block.id] = TextEditingController();
+    setState(() => note.blocks.add(block));
+    _save();
+  }
+
+  /// Picks an image and copies it into the app documents dir (picked temp files
+  /// can be cleared). Returns the persistent path, or null if cancelled.
+  Future<String?> _pickImage() async {
+    final picked =
+        await ImagePicker().pickImage(source: ImageSource.gallery);
+    if (picked == null) return null;
+    final dir = await getApplicationDocumentsDirectory();
+    final dest = p.join(
+        dir.path, 'note_${DateTime.now().millisecondsSinceEpoch}.png');
+    await File(picked.path).copy(dest);
+    return dest;
+  }
+
+  Future<void> _replaceImage(NoteBlock block) async {
+    final path = await _pickImage();
+    if (path == null) return;
+    setState(() => block.imagePath = path);
+    _save();
+  }
+
+  void _removeImage(NoteBlock block) {
+    // Clear the image so the block becomes an (empty) text block again.
+    setState(() => block.imagePath = '');
+    _save();
+  }
+
   void _deleteBlock(NoteBlock block) {
     final note = _note;
     if (note == null) return;
@@ -127,7 +206,7 @@ class _NoteEditorScreenState extends ConsumerState<NoteEditorScreen> {
             children: [
               Expanded(
                 child: OutlinedButton.icon(
-                  onPressed: _addBlock,
+                  onPressed: _showAddSheet,
                   icon: const Icon(Icons.add),
                   label: const Text('Add block'),
                 ),
@@ -173,6 +252,8 @@ class _NoteEditorScreenState extends ConsumerState<NoteEditorScreen> {
                 note.blocks[i].text = v;
                 _save();
               },
+              onPickImage: () => _replaceImage(note.blocks[i]),
+              onRemoveImage: () => _removeImage(note.blocks[i]),
               onDelete: () => _deleteBlock(note.blocks[i]),
               onMoveUp: () => _moveBlock(i, -1),
               onMoveDown: () => _moveBlock(i, 1),
@@ -192,6 +273,8 @@ class _BlockCard extends StatelessWidget {
     required this.controller,
     required this.onChanged,
     required this.onTextChanged,
+    required this.onPickImage,
+    required this.onRemoveImage,
     required this.onDelete,
     required this.onMoveUp,
     required this.onMoveDown,
@@ -203,6 +286,8 @@ class _BlockCard extends StatelessWidget {
   final TextEditingController controller;
   final VoidCallback onChanged;
   final ValueChanged<String> onTextChanged;
+  final VoidCallback onPickImage;
+  final VoidCallback onRemoveImage;
   final VoidCallback onDelete;
   final VoidCallback onMoveUp;
   final VoidCallback onMoveDown;
@@ -210,9 +295,36 @@ class _BlockCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SectionCard(
-      title: 'Block ${index + 1}',
-      icon: Icons.text_fields,
+      title: block.isImage ? 'Image ${index + 1}' : 'Block ${index + 1}',
+      icon: block.isImage ? Icons.image_outlined : Icons.text_fields,
       children: [
+        if (block.isImage) ..._imageChildren(context) else ..._textChildren(context),
+        const Divider(height: 24),
+        Row(
+          children: [
+            IconButton(
+              tooltip: 'Move up',
+              icon: const Icon(Icons.arrow_upward),
+              onPressed: index == 0 ? null : onMoveUp,
+            ),
+            IconButton(
+              tooltip: 'Move down',
+              icon: const Icon(Icons.arrow_downward),
+              onPressed: index == total - 1 ? null : onMoveDown,
+            ),
+            const Spacer(),
+            TextButton.icon(
+              onPressed: total <= 1 ? null : onDelete,
+              icon: const Icon(Icons.delete_outline),
+              label: const Text('Delete block'),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  List<Widget> _textChildren(BuildContext context) => [
         TextField(
           controller: controller,
           maxLines: null,
@@ -234,7 +346,7 @@ class _BlockCard extends StatelessWidget {
               for (final e in sizePresets.entries)
                 ButtonSegment(value: e.value, label: Text(e.key)),
             ],
-            selected: {_closestSize(block.sizeScale)},
+            selected: {_closest(sizePresets.values, block.sizeScale)},
             showSelectedIcon: false,
             onSelectionChanged: (sel) {
               block.sizeScale = sel.first;
@@ -284,57 +396,92 @@ class _BlockCard extends StatelessWidget {
                 onChanged();
               },
             ),
-            SegmentedButton<NoteAlign>(
-              segments: const [
-                ButtonSegment(
-                    value: NoteAlign.left, icon: Icon(Icons.format_align_left)),
-                ButtonSegment(
-                    value: NoteAlign.center,
-                    icon: Icon(Icons.format_align_center)),
-                ButtonSegment(
-                    value: NoteAlign.right,
-                    icon: Icon(Icons.format_align_right)),
-              ],
-              selected: {block.align},
-              showSelectedIcon: false,
-              onSelectionChanged: (sel) {
-                block.align = sel.first;
-                onChanged();
-              },
-            ),
+            _alignButtons(),
           ],
         ),
-        const Divider(height: 24),
-        Row(
-          children: [
-            IconButton(
-              tooltip: 'Move up',
-              icon: const Icon(Icons.arrow_upward),
-              onPressed: index == 0 ? null : onMoveUp,
-            ),
-            IconButton(
-              tooltip: 'Move down',
-              icon: const Icon(Icons.arrow_downward),
-              onPressed: index == total - 1 ? null : onMoveDown,
-            ),
-            const Spacer(),
-            TextButton.icon(
-              onPressed: total <= 1 ? null : onDelete,
-              icon: const Icon(Icons.delete_outline),
-              label: const Text('Delete block'),
-            ),
-          ],
+      ];
+
+  List<Widget> _imageChildren(BuildContext context) {
+    final exists = block.imagePath.isNotEmpty && File(block.imagePath).existsSync();
+    return [
+      Container(
+        width: double.infinity,
+        constraints: const BoxConstraints(maxHeight: 220),
+        decoration: BoxDecoration(
+          color: Theme.of(context).colorScheme.surfaceContainerHighest,
+          borderRadius: BorderRadius.circular(12),
         ),
-      ],
-    );
+        padding: const EdgeInsets.all(8),
+        child: exists
+            ? Image.file(File(block.imagePath), fit: BoxFit.contain)
+            : const Padding(
+                padding: EdgeInsets.symmetric(vertical: 24),
+                child: Text('Image not found', textAlign: TextAlign.center),
+              ),
+      ),
+      const SizedBox(height: 12),
+      Wrap(
+        spacing: 8,
+        runSpacing: 8,
+        children: [
+          OutlinedButton.icon(
+            onPressed: onPickImage,
+            icon: const Icon(Icons.image_search),
+            label: const Text('Replace'),
+          ),
+          TextButton.icon(
+            onPressed: onRemoveImage,
+            icon: const Icon(Icons.hide_image_outlined),
+            label: const Text('Remove image'),
+          ),
+        ],
+      ),
+      const SizedBox(height: 16),
+      Text('Width', style: Theme.of(context).textTheme.labelLarge),
+      const SizedBox(height: 8),
+      Align(
+        alignment: Alignment.centerLeft,
+        child: SegmentedButton<double>(
+          segments: [
+            for (final e in imageWidthPresets.entries)
+              ButtonSegment(value: e.value, label: Text(e.key)),
+          ],
+          selected: {_closest(imageWidthPresets.values, block.imageWidthScale)},
+          showSelectedIcon: false,
+          onSelectionChanged: (sel) {
+            block.imageWidthScale = sel.first;
+            onChanged();
+          },
+        ),
+      ),
+      const SizedBox(height: 16),
+      Align(alignment: Alignment.centerLeft, child: _alignButtons()),
+    ];
   }
+
+  Widget _alignButtons() => SegmentedButton<NoteAlign>(
+        segments: const [
+          ButtonSegment(
+              value: NoteAlign.left, icon: Icon(Icons.format_align_left)),
+          ButtonSegment(
+              value: NoteAlign.center, icon: Icon(Icons.format_align_center)),
+          ButtonSegment(
+              value: NoteAlign.right, icon: Icon(Icons.format_align_right)),
+        ],
+        selected: {block.align},
+        showSelectedIcon: false,
+        onSelectionChanged: (sel) {
+          block.align = sel.first;
+          onChanged();
+        },
+      );
 
   /// Snap an arbitrary stored scale to the nearest preset so the SegmentedButton
   /// always has a valid selection.
-  double _closestSize(double value) {
-    double best = 1.0;
+  double _closest(Iterable<double> presets, double value) {
+    double best = presets.first;
     double bestDiff = double.infinity;
-    for (final v in sizePresets.values) {
+    for (final v in presets) {
       final diff = (v - value).abs();
       if (diff < bestDiff) {
         bestDiff = diff;
